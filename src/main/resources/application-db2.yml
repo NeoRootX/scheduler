@@ -1,0 +1,11 @@
+spring:
+  datasource:
+    url: jdbc:db2://localhost:50000/SCHEDULER
+    username: db2inst1
+    password: secret
+    driver-class-name: com.ibm.db2.jcc.DB2Driver
+  jpa:
+    hibernate:
+      ddl-auto: update
+    database-platform: org.hibernate.dialect.DB2Dialect
+    show-sql: true

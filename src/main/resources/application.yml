@@ -1,0 +1,9 @@
+spring:
+  profiles:
+    active: mysql
+  thymeleaf:
+    cache: false
+logging:
+  level:
+    root: info
+    com.example.scheduler: info

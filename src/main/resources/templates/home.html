@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="ja">
+<head>
+    <meta charset="UTF-8"/>
+    <title>Scheduler Enterprise</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1"/>
+    <link rel="stylesheet" th:href="@{/css/main.css}"/>
+</head>
+<body>
+<header class="topbar">
+    <div class="topbar__inner">
+        <h1 class="brand">Scheduler Enterprise</h1>
+        <div class="brand__sub">スケジューラパネル・スケジュール／タスク／手動実行</div>
+    </div>
+</header>
+
+<main class="container">
+    <!-- 上段：Schedules / Manual Run -->
+    <section class="grid-2">
+        <!-- Schedules -->
+        <div class="card">
+            <div class="card__header"><h2>スケジュール</h2></div>
+            <div class="card__body">
+                <form class="form" method="post" action="/schedules">
+                    <div class="form__row">
+                        <label for="sch-type">タイプ</label>
+                        <select id="sch-type" name="type" required>
+                            <option value="" disabled selected>Runner のタイプを選択</option>
+                            <option th:each="r : ${runners}" th:value="${r}" th:text="${r}"></option>
+                        </select>
+                    </div>
+                    <div class="form__row">
+                        <label for="sch-cron">Cron</label>
+                        <input id="sch-cron" name="cron" placeholder="0 */1 * * * *" required>
+                    </div>
+                    <div class="form__row">
+                        <label for="sch-payload">ペイロード（JSON）</label>
+                        <input id="sch-payload" name="payload" placeholder='{"root":"D:/src","output":"D:/report"}'>
+                    </div>
+                    <div class="form__row form__row--inline">
+                        <!-- Integer 0/1 でバインド -->
+                        <input type="hidden" name="enabled" value="0">
+                        <label class="checkbox">
+                            <input type="checkbox" name="enabled" value="1" checked>
+                            <span>有効</span>
+                        </label>
+                        <button type="submit" class="btn btn--primary">作成</button>
+                    </div>
+                </form>
+
+                <div class="table-wrap">
+                    <table class="table">
+                        <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>タイプ</th>
+                            <th>Cron</th>
+                            <th>有効</th>
+                            <th>最終実行</th>
+                            <th>操作</th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        <tr th:each="s : ${schedules}">
+                            <td th:text="${s.id}"></td>
+                            <td th:text="${s.type}"></td>
+                            <td><code class="code" th:text="${s.cron}"></code></td>
+                            <td>
+                                <span class="badge"
+                                      th:classappend="${s.enabled == 1} ? ' badge--ok' : ' badge--muted'"
+                                      th:text="${s.enabled == 1} ? 'ON' : 'OFF'"></span>
+                            </td>
+                            <td th:text="${s.lastFireAt}"></td>
+                            <td>
+                                <!-- 有効/無効 切替 -->
+                                <form th:action="@{|/schedule/${s.id}/toggle|}" method="post" style="display:inline">
+                                    <!-- toggle は boolean を受けるので true/false を送る -->
+                                    <input type="hidden" name="enabled" th:value="${s.enabled == 0}"/>
+                                    <button type="submit"
+                                            th:text="${s.enabled == 1} ? '無効化' : '有効化'"
+                                            th:class="${s.enabled == 1} ? 'btn btn--neutral' : 'btn btn--primary'">
+                                    </button>
+                                </form>
+
+                                <!-- 削除 -->
+                                <form th:action="@{|/schedule/${s.id}/delete|}" method="post" style="display:inline"
+                                      onsubmit="return confirm('このスケジュールを削除します。関連タスクが残っている場合は削除できません。実行しますか？')">
+                                    <button type="submit" class="btn btn--danger"
+                                            title="関連タスクがあると削除できません">削除
+                                    </button>
+                                </form>
+                            </td>
+                        </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- Manual Run -->
+        <div class="card">
+            <div class="card__header"><h2>手動実行（DB 不使用）</h2></div>
+            <div class="card__body">
+                <form class="form" method="post" action="/manual/run">
+                    <div class="form__row">
+                        <label for="mr-type">タイプ</label>
+                        <select id="mr-type" name="type">
+                            <option th:each="r : ${runners}" th:value="${r}" th:text="${r}"></option>
+                        </select>
+                    </div>
+                    <div class="form__row">
+                        <label for="mr-payload">ペイロード（JSON）</label>
+                        <input id="mr-payload" name="payload" th:value="${lastPayload}"
+                               placeholder='{"root":"D:/src","output":"D:/report"}'>
+                    </div>
+                    <div class="form__row form__row--inline">
+                        <button type="submit" class="btn btn--secondary">今すぐ実行</button>
+                        <div class="tip">DB に書き込まず、Runner を直接実行します。</div>
+                    </div>
+                </form>
+
+                <div class="alert" th:if="${ok != null}">
+                    <div class="alert__title">
+                        <span th:if="${ok}" class="badge badge--ok">SUCCESS</span>
+                        <span th:if="${!ok}" class="badge badge--error">FAILED</span>
+                        <span class="muted">タイプ:</span> <b th:text="${lastType}"></b>
+                        <span class="muted">・時間:</span> <b th:text="${costMs}"></b> ms
+                    </div>
+                    <pre class="log" th:if="${error != null}" th:text="${error}"></pre>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- 下段：Enqueue / Tasks -->
+    <section class="grid-2">
+        <!-- Enqueue -->
+        <div class="card">
+            <div class="card__header"><h2>タスク登録</h2></div>
+            <div class="card__body">
+                <form class="form" method="post" action="/tasks/enqueue">
+                    <div class="form__row">
+                        <label for="enq-type">タイプ</label>
+                        <select id="enq-type" name="type" required>
+                            <option value="" disabled selected>Runner のタイプを選択</option>
+                            <option th:each="r : ${runners}" th:value="${r}" th:text="${r}"></option>
+                        </select>
+                    </div>
+                    <div class="form__row">
+                        <label for="enq-payload">ペイロード（JSON）</label>
+                        <input id="enq-payload" name="payload" placeholder='{"root":"D:/src","output":"D:/report"}'>
+                    </div>
+                    <!-- 新增：可选执行时间 -->
+                    <div class="form__row">
+                        <label for="enq-notbefore">実行時刻（任意）</label>
+                        <!-- 不填＝立刻入列执行；浏览器会发 "YYYY-MM-DDTHH:mm" -->
+                        <input type="datetime-local" id="enq-notbefore" name="notBefore" step="1"
+                               placeholder="2025-09-22 08:00:00">
+                    </div>
+                    <div class="form__row form__row--inline">
+                        <button type="submit" class="btn btn--neutral">登録</button>
+                        <div class="tip">状態 <code class="code">PENDING</code> のタスクを 1 件作成し、実行エンジンの取得を待ちます。
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Tasks -->
+        <div class="card">
+            <div class="card__header"><h2>タスク一覧</h2></div>
+            <div class="card__body">
+                <div class="table-wrap">
+                    <table class="table">
+                        <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>タイプ</th>
+                            <th>状態</th>
+                            <th>作成時刻</th>
+                            <th>更新時刻</th>
+                            <th>操作</th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        <tr th:each="t : ${tasks}">
+                            <td th:text="${t.id}"></td>
+                            <td th:text="${t.type}"></td>
+                            <td>
+                                <span class="badge"
+                                      th:classappend="
+                                        ${t.status.name()}=='PENDING' ? ' badge--muted' :
+                                        (${t.status.name()}=='RUNNING' ? ' badge--warn' :
+                                        (${t.status.name()}=='SUCCEED' ? ' badge--ok' :
+                                        (${t.status.name()}=='CANCEL_REQUESTED' ? ' badge--warn' : ' badge--error')))"
+                                      th:text="${t.status.name()}"></span>
+                            </td>
+                            <td th:text="${t.createdAt}"></td>
+                            <td th:text="${t.updatedAt}"></td>
+                            <td>
+                                <!-- 取消按钮：PENDING / RUNNING 可见 -->
+                                <form th:if="${t.status.name()}=='PENDING' or ${t.status.name()}=='RUNNING'"
+                                      th:action="@{|/tasks/${t.id}/cancel|}" method="post" style="display:inline"
+                                      onsubmit="return confirm('このタスクをキャンセルしますか？')">
+                                    <button type="submit" class="btn btn--neutral">取消</button>
+                                </form>
+                                <!-- 取消待ち徽章 -->
+                                <span th:if="${t.status.name()}=='CANCEL_REQUESTED'" class="badge badge--warn"
+                                      style="margin-left:6px">取消待ち</span>
+                                <!-- 删除按钮：禁止 RUNNING / CANCEL_REQUESTED -->
+                                <form th:if="${t.status.name()}!='RUNNING' and ${t.status.name()}!='CANCEL_REQUESTED'"
+                                      th:action="@{|/tasks/${t.id}/delete|}" method="post" style="display:inline"
+                                      onsubmit="return confirm('本当に削除しますか？')">
+                                    <button type="submit" class="btn btn--danger" style="margin-left:6px">删除</button>
+                                </form>
+                            </td>
+                        </tr>
+                        </tbody>
+                    </table>
+                </div>
+                <div class="tip" style="margin-top:8px">注意：状態の変化はポーリング頻度と実行時間に依存します。</div>
+            </div>
+        </div>
+    </section>
+</main>
+
+<footer class="footer">
+    <div class="footer__inner">
+        <span class="muted">© Scheduler Enterprise</span>
+    </div>
+</footer>
+</body>
+</html>

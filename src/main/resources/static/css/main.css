@@ -1,0 +1,143 @@
+:root{
+  --bg:#f7f8fa;
+  --panel:#ffffff;
+  --panel-2:#fafbfc;
+  --text:#1f2328;
+  --muted:#6b7280;
+  --line:#e5e7eb;
+
+  --primary:#2563eb;   /* 主ボタン */
+  --neutral:#334155;   /* セカンダリ */
+  --ok:#16a34a;
+  --warn:#d97706;
+  --err:#dc2626;
+
+  --radius:10px;
+  --shadow:0 1px 2px rgba(20,20,20,.06), 0 4px 16px rgba(20,20,20,.04);
+
+  /* 版心幅（可按需 1440/1536/1600） */
+  --page-max: 1440px;
+}
+
+*{box-sizing:border-box}
+html,body{height:100%}
+body{
+  margin:0;
+  font:14px/1.6 -apple-system,BlinkMacSystemFont,Segoe UI,Roboto,Helvetica,Arial,Apple Color Emoji,Segoe UI Emoji;
+  color:var(--text);
+  background:var(--bg);
+}
+
+/* ===== レイアウト骨格 ===== */
+.topbar{
+  position:sticky; top:0; z-index:10;
+  background:linear-gradient(180deg, rgba(255,255,255,.9), rgba(255,255,255,.7));
+  border-bottom:1px solid var(--line);
+  backdrop-filter:saturate(120%) blur(6px);
+}
+.topbar__inner{max-width:var(--page-max);margin:0 auto;padding:12px 16px;display:flex;align-items:baseline;gap:12px}
+.brand{margin:0;font-size:18px}
+.brand__sub{color:var(--muted);font-size:12px}
+
+.container{max-width:var(--page-max);margin:20px auto;padding:0 16px}
+
+.footer{border-top:1px solid var(--line);margin-top:24px}
+.footer__inner{max-width:var(--page-max);margin:0 auto;padding:12px 16px;color:var(--muted);text-align:center}
+
+/* 2 カラム自適応 */
+.grid-2{
+  display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-bottom:20px;
+}
+@media (max-width: 980px){ .grid-2{ grid-template-columns:1fr; } }
+
+/* ===== カード ===== */
+.card{
+  background:var(--panel);
+  border:1px solid var(--line);
+  border-radius:var(--radius);
+  box-shadow:var(--shadow);
+  overflow:hidden;
+}
+.card__header{padding:12px 16px;border-bottom:1px solid var(--line)}
+.card__header h2{margin:0;font-size:16px}
+.card__body{padding:16px}
+
+/* ===== フォーム ===== */
+.form{display:grid;grid-template-columns:140px 1fr;grid-column-gap:12px;grid-row-gap:12px;align-items:center}
+.form__row{display:contents}
+
+/* 大画面では inline 行は折り返さない（有効 + ボタンが縦並びにならない）*/
+.form__row--inline{
+  grid-column:1 / span 2;
+  display:flex;align-items:center;gap:12px;flex-wrap:nowrap;
+}
+@media (max-width: 720px){
+  .form__row--inline{ flex-wrap:wrap; }
+}
+
+label{font-weight:600;color:#374151}
+input,select{
+  width:100%;padding:9px 12px;border:1px solid var(--line);border-radius:8px;background:var(--panel-2);
+  font:inherit;color:var(--text);outline:none;
+}
+input::placeholder{color:#9ca3af}
+
+/* チェックボックスとラベルは一行で */
+.checkbox{display:inline-flex;align-items:center;gap:8px;font-weight:600;white-space:nowrap}
+
+/* ===== ボタン ===== */
+.btn{
+  display:inline-flex;align-items:center;gap:6px;
+  padding:8px 12px;border-radius:8px;border:1px solid transparent;
+  font-weight:700;cursor:pointer;transition:transform .05s ease, opacity .15s ease;
+  white-space:nowrap;
+}
+.btn:active{transform:translateY(1px)}
+.btn--primary{background:var(--primary);color:#fff}
+.btn--primary:hover{opacity:.95}
+.btn--secondary{background:#fff;border-color:var(--primary);color:var(--primary);font-weight:600}
+.btn--secondary:hover{background:#eef2ff}
+.btn--neutral{background:#fff;border-color:var(--neutral);color:var(--neutral);font-weight:600}
+.btn--neutral:hover{background:#f3f4f6}
+
+/* 表格与上方内容拉开一点距离 */
+.card__body > .form {
+  margin-bottom: 12px;
+}
+
+/* ===== テーブル ===== */
+.table-wrap{width:100%;overflow:auto;border-radius:8px;border:1px solid var(--line)}
+.table{
+  width:100%;
+  border-collapse:collapse;
+  /* min-width を外し、版心拡張に合わせて伸びる */
+}
+.table th,.table td{padding:6px 8px;border-bottom:1px solid var(--line);text-align:left;vertical-align:top;white-space:nowrap}
+.table thead th{background:#f3f4f6;border-bottom:1px solid var(--line);font-size:12px;color:#6b7280;text-transform:uppercase;letter-spacing:.3px}
+.table tbody tr:hover{background:#fafafa}
+
+/* 長文列だけは必要に応じて折返しを許可（例：Cron をそのまま/ペイロード列など） */
+/* .table td:nth-child(3){ white-space:normal; word-break:break-all; } */
+
+/* ===== コード/ログ/ヒント ===== */
+.code, pre{
+  font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,"Liberation Mono","Courier New",monospace;
+  font-size:12px;background:#f5f7fb;border:1px solid var(--line);border-radius:6px;padding:2px 6px;
+}
+pre{padding:10px;margin:8px 0 0;max-height:160px;overflow:auto}
+
+.tip{color:var(--muted);font-size:12px}
+
+/* ===== バッジ ===== */
+.badge{
+  display:inline-block;padding:2px 8px;border-radius:999px;font-size:12px;border:1px solid var(--line);background:#fff;color:#374151;
+}
+.badge--ok{background:#e9f9ef;border-color:#a7f3d0;color:#065f46}
+.badge--warn{background:#fff7ed;border-color:#fed7aa;color:#7c2d12}
+.badge--error{background:#fef2f2;border-color:#fecaca;color:#7f1d1d}
+.badge--muted{background:#f3f4f6;color:#6b7280}
+
+/* ===== アラート ===== */
+.alert{margin-top:12px;border:1px solid var(--line);border-radius:8px;padding:12px;background:#fafafa}
+.alert__title{font-weight:700;display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.muted{color:var(--muted)}
